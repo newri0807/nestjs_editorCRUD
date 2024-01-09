@@ -38,3 +38,4 @@ lerna-debug.log*
 .env
 compose.yml
 .compose.yml
+/uploads
