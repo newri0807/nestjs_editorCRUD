@@ -15,7 +15,7 @@ import { PostEntity } from '../entities/post.entity';
 import { PostService } from '../services/post.service';
 import { CreatePostDto, UpdatePostDto } from './post.dto';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
-import { multerConfig } from '../config/multer.config';
+import * as multer from 'multer';
 
 @Controller('posts')
 export class PostController {
@@ -43,18 +43,25 @@ export class PostController {
   // }
 
   @Post()
-  @UseInterceptors(FilesInterceptor('image', 10, multerConfig)) // Adjust '10' to the max number of files
+  @UseInterceptors(FilesInterceptor('image', 10))
   async create(
     @UploadedFiles() files: Express.Multer.File[],
     @Body() createPostDto: CreatePostDto,
-  ): Promise<PostEntity> {
+  ) {
+    // 파일이 업로드되면, files 배열은 업로드된 파일에 대한 정보를 포함
     if (files && files.length > 0) {
-      console.log('files:', files);
-      createPostDto.image = files.map((file) => `uploads/${file.filename}`);
+      // 업로드된 파일들을 처리하는 로직
+      console.log('Uploaded files:', files);
+
+      createPostDto.image = files.map(
+        (file) =>
+          `https://editor-blogs.s3.ap-northeast-2.amazonaws.com/cis/${file.originalname}`,
+      ); // 'location'은 S3 URL
     } else {
       console.log('No files uploaded');
     }
 
+    // 나머지 비즈니스 로직 수행
     return this.postService.createPost(createPostDto);
   }
 
@@ -109,17 +116,21 @@ export class PostController {
   // }
 
   @Put(':id')
-  @UseInterceptors(FilesInterceptor('image', 10, multerConfig)) // Adjust '10' to the max number of files
+  @UseInterceptors(FilesInterceptor('image', 10))
   async update(
     @Param('id') id: number,
-    @UploadedFiles() files: Express.Multer.File[],
+    @UploadedFiles() files: Express.Multer.File[], // files는 업로드된 파일의 배열
     @Body() updatePostDto: UpdatePostDto,
   ): Promise<PostEntity> {
     console.log('Start updating post', updatePostDto);
 
     if (files && files.length > 0) {
-      console.log('Files for update detected:', files);
-      updatePostDto.image = files.map((file) => `uploads/${file.filename}`);
+      const uploadedImages = files.map(
+        (file) =>
+          `https://editor-blogs.s3.ap-northeast-2.amazonaws.com/cis/${file.originalname}`,
+      ); // S3 URL
+      console.log('Files for update detected:', uploadedImages);
+      updatePostDto.image = uploadedImages; // 'image' 필드에 URL 배열 저장
     } else {
       console.log('No files uploaded for update');
     }

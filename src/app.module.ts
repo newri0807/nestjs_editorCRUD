@@ -6,11 +6,25 @@ import { PostController } from './controllers/post.controller';
 import { PostService } from './services/post.service';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { MulterModule } from '@nestjs/platform-express';
+import { MulterExtendedModule } from 'nestjs-multer-extended';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, // Make ConfigModule available throughout the application
+      isGlobal: true,
+    }),
+    MulterModule.register({
+      dest: './upload',
+    }),
+    MulterExtendedModule.register({
+      awsConfig: {
+        accessKeyId: process.env.AWS_S3_ACCESS_KEY,
+        secretAccessKey: process.env.AWS_S3_SECRET_KEY,
+        region: process.env.AWS_S3_REGION,
+      },
+      bucket: process.env.AWS_S3_BUCKET_NAME,
+      basePath: 'cis',
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
